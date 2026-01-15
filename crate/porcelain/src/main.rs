@@ -20,7 +20,7 @@ fn main() {
     let index = repo.index().unwrap();
     let work_dir = repo.work_dir().unwrap();
 
-    for (path, entry_oid) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e.id()))) {
+    for (path, entry_oid) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e.id))) {
         let path_str = path.to_string();
         let full_path = work_dir.join(&*path_str);
 
