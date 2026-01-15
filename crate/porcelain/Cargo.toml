@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 gix = { version = "0.63", default-features = false, features = ["max-performance", "index", "status"] }
+gix-hash = "0.14"
+gix-object = "0.42"

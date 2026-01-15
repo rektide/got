@@ -1340,6 +1340,8 @@ name = "porcelain"
 version = "0.1.0"
 dependencies = [
  "gix",
+ "gix-hash",
+ "gix-object",
 ]
 
 [[package]]
