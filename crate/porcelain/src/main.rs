@@ -20,14 +20,12 @@ fn main() {
     let index = repo.index().unwrap();
     let work_dir = repo.work_dir().unwrap();
 
-    for (path, entry) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e))) {
+    for (path, entry_oid) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e.id()))) {
         let path_str = path.to_string();
         let full_path = work_dir.join(&*path_str);
 
         let mut index_status = ' ';
         let mut worktree_status = ' ';
-
-        let entry_oid = entry.id();
 
         let path_iter = path.split(|&b| b == b'/');
 
@@ -74,10 +72,17 @@ fn main() {
             let rel_path_str = rel_path.to_str().unwrap();
             let rel_path_bstr = gix::bstr::BStr::new(rel_path_str);
 
-            let found = index
-                .entries_with_paths_by_filter_map(|p, _e| p == rel_path_bstr)
-                .next()
-                .is_some();
+            let found =
+                index
+                    .entries_with_paths_by_filter_map(|p, _e| {
+                        if p == rel_path_bstr {
+                            Some(())
+                        } else {
+                            None
+                        }
+                    })
+                    .next()
+                    .is_some();
 
             if !found {
                 println!("?? {}", rel_path.display());
