@@ -1,0 +1,10 @@
+[package]
+name = "got"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "got"
+path = "src/main.rs"
+
+[dependencies]
