@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 fn main() {
     let repo = match gix::open(".") {
         Ok(repo) => repo,
@@ -22,21 +20,21 @@ fn main() {
     let index = repo.index().unwrap();
     let work_dir = repo.work_dir().unwrap();
 
-    let state = index.state();
-
     for entry in index.entries() {
-        let path = entry.path(&state);
+        let state = &index.state;
+        let path = entry.path(state);
         let path_str = path.to_string();
-        let full_path: PathBuf = work_dir.join(&path_str);
+        let full_path = work_dir.join(&*path_str);
 
         let mut index_status = ' ';
         let mut worktree_status = ' ';
 
         let entry_oid = entry.id;
 
-        let path_iter = std::iter::once(path.clone());
+        let path_iter = path.split(|&b| b == b'/');
 
-        if let Some(head_entry) = head_tree.lookup_entry(path_iter).next() {
+        let mut buf = Vec::new();
+        if let Some(head_entry) = head_tree.lookup_entry(path_iter, &mut buf).unwrap() {
             if let Ok(head_obj) = head_entry.object() {
                 let head_oid = head_obj.id();
                 if head_oid != entry_oid {
@@ -76,9 +74,11 @@ fn main() {
         if path.is_file() {
             let rel_path = path.strip_prefix(work_dir).unwrap();
             let rel_path_str = rel_path.to_str().unwrap();
+
+            let state = &index.state;
             let rel_path_bstr = gix::bstr::BStr::new(rel_path_str);
 
-            if !index.entries().iter().any(|e| e.path(&state) == rel_path_bstr) {
+            if !index.entries().iter().any(|e| e.path(state) == rel_path_bstr) {
                 println!("?? {}", rel_path.display());
             }
         }
