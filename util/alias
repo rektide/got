@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+usage() {
+  echo "Usage: $0 <name> <command>"
+  echo "  Add a git alias"
+  echo ""
+  echo "Example:"
+  echo "  $0 co checkout"
+  exit 1
+}
+
+if [ $# -lt 2 ]; then
+  usage
+fi
+
+name="$1"
+command="$2"
+shift 2
+
+git config --global alias."$name" "$command"
+echo "Added git alias: $name -> $command"

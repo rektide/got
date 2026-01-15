@@ -3,10 +3,10 @@ use anyhow::{Context, Result};
 
 pub fn execute(args: NahArgs) -> Result<()> {
     match args {
-        NahArgs::Add { pattern, global } => execute_add(pattern, *global),
-        NahArgs::Remove { pattern, global } => execute_remove(pattern, *global),
-        NahArgs::List { global } => execute_list(*global),
-        NahArgs::Show { global } => execute_show(*global),
+        NahArgs::Add { pattern, global } => execute_add(pattern, global),
+        NahArgs::Remove { pattern, global } => execute_remove(pattern, global),
+        NahArgs::List { global } => execute_list(global),
+        NahArgs::Show { global } => execute_show(global),
     }
 }
 

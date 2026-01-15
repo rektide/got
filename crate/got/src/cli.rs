@@ -1,7 +1,4 @@
-use anyhow::Result;
 use clap::{Args, Parser, Subcommand, ValueEnum};
-
-pub use commands::*;
 
 #[derive(Parser)]
 #[command(
@@ -133,7 +130,7 @@ pub struct CommitdArgs {
     pub dry_run: bool,
 }
 
-#[derive(Args, Debug, Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum NahArgs {
     /// Add a file to ignore list
     Add {
