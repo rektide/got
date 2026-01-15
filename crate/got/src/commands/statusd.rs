@@ -1,7 +1,9 @@
 use crate::cli::StatusdArgs;
+use crate::util;
 use anyhow::{Context, Result};
 
 pub fn execute(_args: StatusdArgs) -> Result<()> {
-    Err(anyhow::anyhow!("statusd tool not yet implemented")
-        .context("Run 'got statusd --help' for usage information"))
+    util::ensure_git_alias("statusd", "got statusd")?;
+    println!("Added git alias: statusd -> got statusd");
+    Ok(())
 }

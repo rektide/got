@@ -8,6 +8,6 @@ pub fn execute(command: Commands) -> Result<()> {
         Commands::Gotsel(args) => gotsel::execute(args),
         Commands::Statusd(args) => statusd::execute(args),
         Commands::Commitd(args) => commitd::execute(args),
-        Commands::Nah(args) => nah::execute(args),
+        Commands::Nah { command: args } => nah::execute(args),
     }
 }

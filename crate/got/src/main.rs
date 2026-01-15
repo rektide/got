@@ -8,7 +8,7 @@ fn main() -> Result<()> {
     setup_logging(cli.verbose);
 
     // Execute command
-    got::commands::execute(cli.command)
+    got::commands::dispatch::execute(cli.command)
 }
 
 fn setup_logging(verbosity: u8) {

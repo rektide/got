@@ -59,7 +59,10 @@ pub enum Commands {
     Commitd(CommitdArgs),
 
     /// Ignore files
-    Nah(NahArgs),
+    Nah {
+        #[command(subcommand)]
+        command: NahArgs,
+    },
 }
 
 #[derive(Args, Debug)]
