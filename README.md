@@ -1,15 +1,16 @@
 # got
 
-> got is a tool/toolkit for doing the git things your past self should have done
+> `got` is a tool/toolkit for doing the git things your past self should have done
 
 # toolkit
 
-| **tool** | use |
-| **`goldest`** bin/executable | find the oldest changes and get a datestamp for that file |
-| **`git commitd`** git alias | `commit` using the most recent date of what is staged |
-| **`git statusd`** git alias | `status` but focused on modified time |
-| **`hook-got`** shell hook | shell hook to build pertinent environment variables |
-| **`gotsel`** micro TUI | git staging selection tree tool |
+| tool | use |
+| --- | --- |
+| `goldest` bin/executable | find the oldest changes and get a datestamp for that file |
+| `git commitd` git alias | `commit` using the most recent date of what is staged |
+| `git statusd` git alias | `status` but focused on modified time |
+| `hook-got` shell hook | shell hook to build pertinent environment variables |
+| `gotsel` micro TUI | git staging selection tree tool |
 
 ## `goldest`
 
@@ -20,13 +21,15 @@ $ goldest
 README.md 01-15-26T16:20:00Z
 ```
 
-- `-f` return only file
-- `-d` return only date
-- `-u[filter]` filter equivalent to git status -u filtering
-- `--lines/-l [num-of-lines]` number of results to show
-- `--skip/-S [skip]` skip `s` results
-- `-s/--short` git status --short output format
-- `--porcelain` git status --procelain output format
+| **option** | description |
+| --- | --- |
+| `-f` | return only file |
+| `-d` | return only date |
+| `-u[filter]` | filter equivalent to git status -u filtering |
+| `--lines/-l [num-of-lines]` | number of results to show |
+| `--skip/-S [skip]` | skip `s` results |
+| `-s/--short` | git status --short output format |
+| `--porcelain` | git status --porcelain output format |
 
 ## `hook-got`
 
