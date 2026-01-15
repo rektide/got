@@ -20,16 +20,14 @@ fn main() {
     let index = repo.index().unwrap();
     let work_dir = repo.work_dir().unwrap();
 
-    for entry in index.entries() {
-        let state = &index.state;
-        let path = entry.path(state);
+    for (path, entry) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e))) {
         let path_str = path.to_string();
         let full_path = work_dir.join(&*path_str);
 
         let mut index_status = ' ';
         let mut worktree_status = ' ';
 
-        let entry_oid = entry.id;
+        let entry_oid = entry.id();
 
         let path_iter = path.split(|&b| b == b'/');
 
@@ -50,7 +48,7 @@ fn main() {
                 let oid = gix_object::compute_hash(
                     gix_hash::Kind::Sha1,
                     gix_object::Kind::Blob,
-                    &content
+                    &content,
                 );
                 if oid != entry_oid {
                     worktree_status = 'M';
@@ -74,11 +72,14 @@ fn main() {
         if path.is_file() {
             let rel_path = path.strip_prefix(work_dir).unwrap();
             let rel_path_str = rel_path.to_str().unwrap();
-
-            let state = &index.state;
             let rel_path_bstr = gix::bstr::BStr::new(rel_path_str);
 
-            if !index.entries().iter().any(|e| e.path(state) == rel_path_bstr) {
+            let found = index
+                .entries_with_paths_by_filter_map(|p, _e| p == rel_path_bstr)
+                .next()
+                .is_some();
+
+            if !found {
                 println!("?? {}", rel_path.display());
             }
         }
