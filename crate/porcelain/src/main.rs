@@ -33,7 +33,7 @@ fn main() {
         if let Some(head_entry) = head_tree.lookup_entry(path_iter, &mut buf).unwrap() {
             if let Ok(head_obj) = head_entry.object() {
                 let head_oid = head_obj.id();
-                if head_oid != entry_oid {
+                if head_oid != entry_oid.1 {
                     index_status = 'M';
                 }
             }
@@ -48,7 +48,7 @@ fn main() {
                     gix_object::Kind::Blob,
                     &content,
                 );
-                if oid != entry_oid {
+                if oid != entry_oid.1 {
                     worktree_status = 'M';
                 }
             }
