@@ -2,9 +2,29 @@
 name = "got"
 version = "0.1.0"
 edition = "2021"
+description = "A toolkit for git tools your past self should have used"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rektide/got"
 
 [[bin]]
 name = "got"
 path = "src/main.rs"
 
 [dependencies]
+# Core CLI framework
+clap = { version = "*", features = ["derive", "env", "unicode", "wrap_help"] }
+
+# Error handling
+anyhow = "*"
+thiserror = "*"
+
+# System interaction
+which = "*"
+
+# Configuration
+directories = "*"
+
+[dev-dependencies]
+assert_cmd = "*"
+predicates = "*"
+tempfile = "*"
