@@ -6,48 +6,56 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let head = match repo.head() {
-        Ok(head) => head,
-        Err(e) => {
-            eprintln!("fatal: cannot get HEAD: {}", e);
-            std::process::exit(1);
-        }
-    };
-    let head_commit = match head.try_peel_to_commit() {
-        Ok(Some(commit)) => commit,
+    let head = match repo.head().into_fully_peeled_id() {
+        Ok(Some(id)) => id,
         Ok(None) => {
             eprintln!("fatal: HEAD is not a commit");
             std::process::exit(1);
         }
         Err(e) => {
-            eprintln!("fatal: cannot peel HEAD: {}", e);
+            eprintln!("fatal: cannot get HEAD: {}", e);
             std::process::exit(1);
         }
     };
-    let head_tree = head_commit.tree().unwrap();
-    let work_dir = repo.work_dir().unwrap();
-    let mut index = repo.index().unwrap();
-    index.write().unwrap();
-    for entry in index.entries() {
-        let path = entry.path(work_dir);
-        let rel_path = entry.path_in_index(gix::index::entry::Stage::Unmodified);
-        let path_str = rel_path.to_string();
+    let head_commit = match repo.find_object(head) {
+        Ok(commit) => commit,
+        Err(e) => {
+            eprintln!("fatal: cannot find HEAD commit: {}", e);
+            std::process::exit(1);
+        }
+    };
+    let head_tree = match head_commit.peel_to_tree() {
+        Ok(tree) => tree,
+        Err(e) => {
+            eprintln!("fatal: cannot peel to tree: {}", e);
+            std::process::exit(1);
+        }
+    };
+    let index = repo.index();
+    let entries = index.entries();
+    for entry in entries {
+        let path = entry.path(gix::index::entry::Mode::FILE);
+        let path_str = path.to_string();
         let mut index_status = ' ';
         let mut worktree_status = ' ';
-        let head_entry = head_tree.lookup_entry(&rel_path);
-        let head_id = head_entry.and_then(|e| e.object().ok()).map(|o| o.id());
-        if let Some(head_id) = head_id {
-            if head_id != *entry.id() {
-                index_status = 'M';
+        let head_entry = head_tree.lookup_entry(&path);
+        let entry_oid = entry.id;
+        if let Some(head_entry) = head_entry {
+            if let Ok(head_obj) = head_entry.object() {
+                let head_oid = head_obj.id();
+                if head_oid != entry_oid {
+                    index_status = 'M';
+                }
             }
         } else {
             index_status = 'A';
         }
-        if path.exists() {
-            let worktree_content = std::fs::read(path).unwrap();
-            let worktree_blob = gix::objs::Blob::from(worktree_content);
-            let worktree_id = worktree_blob.id();
-            if worktree_id != *entry.id() {
+        let work_dir = repo.work_dir().unwrap();
+        let full_path = work_dir.join(&path_str);
+        if full_path.exists() {
+            let worktree_content = std::fs::read(&full_path).unwrap();
+            let worktree_oid = gix::hash::ObjectId::hash(gix::hash::Kind::Sha1, &worktree_content);
+            if worktree_oid != entry_oid {
                 worktree_status = 'M';
             }
         } else {
@@ -57,12 +65,16 @@ fn main() {
             println!("{}{} {}", index_status, worktree_status, path_str);
         }
     }
-    let ignore = repo.objects().ignore();
-    let worktree_path = repo.work_dir().unwrap();
-    for entry in ignore.iter(worktree_path, None).unwrap() {
-        if entry.status == gix::ignore::Kind::Excluded {
-            let path = entry.path.strip_prefix(worktree_path).unwrap();
-            println!("?? {}", path.display());
+    let work_dir = repo.work_dir().unwrap();
+    let mut options = gix::status::Options::default();
+    let mut status = gix::status::Kind::WorktreeThenIndex;
+    let status_output = gix::status::Plumbing::new(&repo).status();
+    for entry in status_output.worktree.entries() {
+        match entry {
+            gix::status::Entry::Untracked(entry) => {
+                println!("?? {}", entry.path().display());
+            }
+            _ => {}
         }
     }
 }
