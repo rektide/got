@@ -1,10 +1,12 @@
 use anyhow::Result;
 use gixkit::{open_repo, StatusIterBuilder, UntrackedIterBuilder};
+use std::sync::Arc;
 
 fn main() -> Result<()> {
     let repo = open_repo(".")?;
+    let repo = Arc::new(repo);
 
-    let status_iter = StatusIterBuilder::new(&repo)
+    let status_iter = StatusIterBuilder::new(Arc::clone(&repo))
         .show_untracked(false)
         .build()?;
 
@@ -18,7 +20,7 @@ fn main() -> Result<()> {
         );
     }
 
-    let untracked_iter = UntrackedIterBuilder::new(&repo)
+    let untracked_iter = UntrackedIterBuilder::new(Arc::clone(&repo))
         .filter(gixkit::UntrackedFilter::Normal)
         .build()?;
 

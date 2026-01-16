@@ -3,18 +3,19 @@ use gix::{bstr::BString, Repository};
 use gix_hash::ObjectId;
 use gix_object::Kind;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::types::{FileStatus, StatusChar};
 
 /// Builder for StatusIter
-pub struct StatusIterBuilder<'repo> {
-    repo: &'repo Repository,
+pub struct StatusIterBuilder {
+    repo: Arc<Repository>,
     show_untracked: bool,
     path_filter: Option<String>,
 }
 
-impl<'repo> StatusIterBuilder<'repo> {
-    pub fn new(repo: &'repo Repository) -> Self {
+impl StatusIterBuilder {
+    pub fn new(repo: Arc<Repository>) -> Self {
         Self {
             repo,
             show_untracked: true,
@@ -32,24 +33,30 @@ impl<'repo> StatusIterBuilder<'repo> {
         self
     }
 
-    pub fn build(self) -> Result<StatusIter<'repo>> {
-        StatusIter::new(self.repo, self)
+    pub fn build(self) -> Result<StatusIter> {
+        let repo = self.repo;
+        let show_untracked = self.show_untracked;
+        StatusIter::new(repo, show_untracked)
     }
 }
 
 /// Iterator over file statuses in repository
-pub struct StatusIter<'repo> {
-    repo: &'repo Repository,
+pub struct StatusIter {
+    repo: Arc<Repository>,
     show_untracked: bool,
-    head_tree: gix::Tree<'repo>,
+    head_tree_id: gix_hash::ObjectId,
     work_dir: PathBuf,
     index_entries: std::vec::IntoIter<(BString, ObjectId)>,
     untracked_started: bool,
 }
 
-impl<'repo> StatusIter<'repo> {
-    fn new(repo: &'repo Repository, builder: StatusIterBuilder<'repo>) -> Result<Self> {
-        let head_tree = crate::get_head_tree(repo)?;
+impl StatusIter {
+    fn new(repo: Arc<Repository>, show_untracked: bool) -> Result<Self> {
+        let head_tree_id: gix_hash::ObjectId = {
+            let head_tree = crate::get_head_tree(&repo)?;
+            head_tree.id().into()
+        };
+
         let work_dir = repo
             .work_dir()
             .ok_or_else(|| anyhow::anyhow!("Repository has no working directory"))?
@@ -63,15 +70,15 @@ impl<'repo> StatusIter<'repo> {
 
         Ok(Self {
             repo,
-            show_untracked: builder.show_untracked,
-            head_tree,
+            show_untracked,
+            head_tree_id,
             work_dir,
             index_entries: index_entries.into_iter(),
             untracked_started: false,
         })
     }
 
-    pub fn builder(repo: &'repo Repository) -> StatusIterBuilder<'repo> {
+    pub fn builder(repo: Arc<Repository>) -> StatusIterBuilder {
         StatusIterBuilder::new(repo)
     }
 
@@ -79,20 +86,21 @@ impl<'repo> StatusIter<'repo> {
         let mut index_status = ' ';
         let mut worktree_status = ' ';
 
+        let head_tree = self.repo.find_tree(self.head_tree_id).ok();
+
         let path_iter = path.split(|&b| b == b'/');
         let mut buf = Vec::new();
 
-        if let Some(head_entry) = self
-            .head_tree
-            .lookup_entry(path_iter, &mut buf)
-            .ok()
-            .flatten()
-        {
-            if let Ok(head_obj) = head_entry.object() {
-                let head_oid = head_obj.id();
-                if head_oid != entry_oid {
-                    index_status = 'M';
+        if let Some(head_tree) = head_tree {
+            if let Some(head_entry) = head_tree.lookup_entry(path_iter, &mut buf).ok().flatten() {
+                if let Ok(head_obj) = head_entry.object() {
+                    let head_oid = head_obj.id();
+                    if head_oid != entry_oid {
+                        index_status = 'M';
+                    }
                 }
+            } else {
+                index_status = 'A';
             }
         } else {
             index_status = 'A';
@@ -116,7 +124,7 @@ impl<'repo> StatusIter<'repo> {
     }
 }
 
-impl<'repo> Iterator for StatusIter<'repo> {
+impl Iterator for StatusIter {
     type Item = Result<FileStatus>;
 
     fn next(&mut self) -> Option<Self::Item> {

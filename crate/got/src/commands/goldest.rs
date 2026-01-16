@@ -1,9 +1,11 @@
 use crate::cli::GoldestArgs;
 use anyhow::Result;
 use gixkit::{open_repo, DateIter, StatusIter};
+use std::sync::Arc;
 
 pub fn execute(args: GoldestArgs) -> Result<()> {
     let repo = open_repo(std::env::current_dir()?)?;
+    let repo = Arc::new(repo);
 
     let work_dir = repo
         .work_dir()
@@ -12,7 +14,7 @@ pub fn execute(args: GoldestArgs) -> Result<()> {
 
     let show_untracked = args.untracked.is_some();
 
-    let status_iter = StatusIter::builder(&repo)
+    let status_iter = StatusIter::builder(Arc::clone(&repo))
         .show_untracked(show_untracked)
         .build()?;
 
