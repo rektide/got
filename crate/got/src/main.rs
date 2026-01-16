@@ -1,8 +1,9 @@
 use anyhow::Result;
+use clap::Parser;
 use got::cli::Cli;
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let cli = Cli::try_parse().map_err(|e| anyhow::anyhow!("Failed to parse arguments: {}", e))?;
 
     // Set up logging based on verbosity
     setup_logging(cli.verbose);

@@ -1,6 +1,6 @@
 use crate::cli::StatusdArgs;
 use crate::util;
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 pub fn execute(_args: StatusdArgs) -> Result<()> {
     util::ensure_git_alias("statusd", "got statusd")?;
