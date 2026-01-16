@@ -1,18 +1,30 @@
 use anyhow::{Context, Result};
-use gix::Repository;
 
 pub fn get_untracked_files() -> Result<Vec<String>> {
-    let repo = Repository::open_from_env().context("Failed to open git repository")?;
+    let repo = gix::open(".").context("Failed to open git repository")?;
 
     let mut files = Vec::new();
 
-    for entry in repo.status(Some(&mut repo.diff_cache_instant()))? {
-        if let Ok(status) = entry {
-            if !status.is_tracked() && !status.is_ignored() {
-                if let Some(path) = status.path() {
-                    files.push(path.to_string());
-                }
-            }
+    let head_tree = match repo.head_commit() {
+        Ok(commit) => commit.tree().context("Failed to get HEAD tree")?,
+        Err(_) => {
+            let oid = gix::hash::ObjectId::empty_tree(gix::hash::Kind::Sha1);
+            repo.find_tree(oid).context("Failed to find empty tree")?
+        }
+    };
+
+    let index = repo.index().context("Failed to get index")?;
+
+    for (path, _) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e.id))) {
+        let path_str = path.to_string();
+        let path_iter = path.split(|&b| b == b'/');
+        let mut lookup_buf = Vec::new();
+
+        if head_tree
+            .lookup_entry(path_iter, &mut lookup_buf)?
+            .is_none()
+        {
+            files.push(path_str);
         }
     }
 

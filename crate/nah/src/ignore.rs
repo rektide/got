@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use gotconfig::{xdg_git_dir, xdg_git_nah};
+use gotconfig::xdg_git_nah;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -9,6 +9,7 @@ pub fn get_nah_path(global: bool, repo_path: Option<&Path>) -> Result<PathBuf> {
         Ok(xdg_git_nah())
     } else {
         let repo = repo_path
+            .map(Path::to_path_buf)
             .or_else(|| std::env::current_dir().ok())
             .context("Cannot determine repository path")?;
         Ok(repo.join(".git").join("nah"))

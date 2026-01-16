@@ -8,6 +8,7 @@ pub fn execute(args: NahArgs) -> Result<()> {
         NahArgs::Remove { pattern, global } => NahCommands::Remove { pattern, global },
         NahArgs::List { global } => NahCommands::List { global },
         NahArgs::Show { global } => NahCommands::Show { global },
+        NahArgs::Pick { global } => NahCommands::Pick { global },
     };
 
     nah::execute(command)
