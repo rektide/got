@@ -13,8 +13,8 @@ anyhow = "1"
 # Configuration
 gotconfig = { path = "../gotconfig" }
 
+# Git iteration helpers
+gixkit = { path = "../gixkit" }
+
 # CLI
 clap = { version = "4", features = ["derive"] }
-
-# Git operations
-gix = "0.66"

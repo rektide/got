@@ -1,0 +1,27 @@
+[package]
+name = "gixkit"
+version = "0.1.0"
+edition = "2021"
+description = "Git iterator library for got toolkit"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rektide/got"
+
+[lib]
+name = "gixkit"
+path = "src/lib.rs"
+
+[dependencies]
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Git operations
+gix = { version = "0.66", default-features = false, features = ["max-performance", "index", "status"] }
+gix-hash = "0.14"
+gix-object = "0.42"
+
+# Pattern matching for path filters
+glob = "0.3"
+
+[dev-dependencies]
+tempfile = "3"

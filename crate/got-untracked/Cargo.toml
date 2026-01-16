@@ -1,0 +1,17 @@
+[package]
+name = "got-untracked"
+version = "0.1.0"
+edition = "2021"
+description = "Shared untracked file tracking utilities for got"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rektide/got"
+
+[dependencies]
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Git operations
+gix = { version = "0.66", default-features = false, features = ["max-performance", "index", "status"] }
+gix-hash = "0.14"
+gix-object = "0.42"
