@@ -3,7 +3,8 @@ use crate::util;
 use anyhow::Result;
 
 pub fn execute(_args: StatusdArgs) -> Result<()> {
-    util::ensure_git_alias("statusd", "got statusd")?;
-    println!("Added git alias: statusd -> got statusd");
+    const ALIAS: &str = include_str!("../../aliases/alias-statusd.conf");
+    util::ensure_git_alias("statusd", ALIAS)?;
+    println!("Added git alias: statusd");
     Ok(())
 }

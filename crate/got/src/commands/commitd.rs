@@ -3,7 +3,8 @@ use crate::util;
 use anyhow::Result;
 
 pub fn execute(_args: CommitdArgs) -> Result<()> {
-    util::ensure_git_alias("commitd", "got commitd")?;
-    println!("Added git alias: commitd -> got commitd");
+    const ALIAS: &str = include_str!("../../aliases/alias-commitd.conf");
+    util::ensure_git_alias("commitd", ALIAS)?;
+    println!("Added git alias: commitd");
     Ok(())
 }
