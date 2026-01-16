@@ -1,5 +1,5 @@
 use anyhow::Result;
-use gix::{Repository, bstr::BStr};
+use gix::{bstr::BStr, Repository};
 use std::path::PathBuf;
 
 use crate::types::{FileStatus, StatusChar};

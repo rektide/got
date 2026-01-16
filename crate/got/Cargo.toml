@@ -21,11 +21,17 @@ thiserror = "1"
 # System interaction
 which = "4"
 
+# Date/time handling
+chrono = "0.4"
+
 # Configuration
 gotconfig = { path = "../gotconfig" }
 
 # File ignore management
 nah = { path = "../nah" }
+
+# Git iteration toolkit
+gixkit = { path = "../gixkit" }
 
 [dev-dependencies]
 assert_cmd = "2"
