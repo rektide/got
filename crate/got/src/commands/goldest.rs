@@ -1,5 +1,5 @@
 use crate::cli::GoldestArgs;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use gixkit::{open_repo, DateIter, StatusIter};
 
 pub fn execute(args: GoldestArgs) -> Result<()> {

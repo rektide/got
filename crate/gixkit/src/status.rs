@@ -43,8 +43,7 @@ pub struct StatusIter<'repo> {
     show_untracked: bool,
     head_tree: gix::Tree<'repo>,
     work_dir: PathBuf,
-    index_entries: Vec<(BString, ObjectId)>,
-    index_pos: usize,
+    index_entries: std::vec::IntoIter<(BString, ObjectId)>,
     untracked_started: bool,
 }
 
@@ -67,8 +66,7 @@ impl<'repo> StatusIter<'repo> {
             show_untracked: builder.show_untracked,
             head_tree,
             work_dir,
-            index_entries,
-            index_pos: 0,
+            index_entries: index_entries.into_iter(),
             untracked_started: false,
         })
     }
@@ -122,10 +120,7 @@ impl<'repo> Iterator for StatusIter<'repo> {
     type Item = Result<FileStatus>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index_pos < self.index_entries.len() {
-            let (path, oid) = self.index_entries[self.index_pos].clone();
-            self.index_pos += 1;
-
+        while let Some((path, oid)) = self.index_entries.next() {
             let (index_status, worktree_status) = self.compute_index_status(path.clone(), oid);
 
             let file_status = FileStatus {
@@ -133,13 +128,6 @@ impl<'repo> Iterator for StatusIter<'repo> {
                 index_status: StatusChar::from_char(index_status),
                 worktree_status: StatusChar::from_char(worktree_status),
             };
-
-            eprintln!(
-                "Debug: path={} idx={} wrk={}",
-                path.to_string(),
-                index_status,
-                worktree_status
-            );
 
             if file_status.has_changes() {
                 return Some(Ok(file_status));
