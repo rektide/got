@@ -15,3 +15,7 @@ pub fn xdg_git_config() -> PathBuf {
 pub fn xdg_git_config_d() -> PathBuf {
     xdg_git_dir().join("config.d")
 }
+
+pub fn xdg_git_nah() -> PathBuf {
+    xdg_git_dir().join("nah")
+}
