@@ -1,16 +1,11 @@
 use crate::cli::GoldestArgs;
 use anyhow::Result;
-use gixkit::{open_repo, DateIter, IterMode, RepoIterBuilder};
+use gixkit::{open_repo, IterMode, RepoIterBuilder};
 use std::sync::Arc;
 
 pub fn execute(args: GoldestArgs) -> Result<()> {
     let repo = open_repo(std::env::current_dir()?)?;
     let repo = Arc::new(repo);
-
-    let work_dir = repo
-        .work_dir()
-        .ok_or_else(|| anyhow::anyhow!("Repository has no working directory"))?
-        .to_path_buf();
 
     let show_untracked = args.untracked.is_some();
     let mode = if show_untracked {
@@ -19,43 +14,53 @@ pub fn execute(args: GoldestArgs) -> Result<()> {
         IterMode::Tracked
     };
 
-    let repo_iter = RepoIterBuilder::new(Arc::clone(&repo)).mode(mode).build()?;
+    let repo_iter = RepoIterBuilder::new(Arc::clone(&repo))
+        .mode(mode)
+        .include_metadata(true)
+        .build()?;
 
-    let date_iter = DateIter::new(repo_iter, work_dir);
+    let mut files: Vec<_> = repo_iter.collect::<Result<Vec<_>>>()?;
 
-    let mut files: Vec<_> = date_iter.collect::<Result<Vec<_>>>()?;
-
-    files.sort_by_key(|f| f.modified_time);
+    files.sort_by_key(|f| {
+        f.metadata
+            .as_ref()
+            .map(|m| m.modified_time)
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+    });
 
     let skip = args.skip;
     let lines = args.lines;
     let files = files.into_iter().skip(skip).take(lines).collect::<Vec<_>>();
 
     for file in files {
-        let modified_time = chrono::DateTime::<chrono::Utc>::from(file.modified_time)
+        let metadata = file
+            .metadata
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Missing metadata"))?;
+        let modified_time = chrono::DateTime::<chrono::Utc>::from(metadata.modified_time)
             .format("%m-%d-%yT%H:%M:%SZ")
             .to_string();
 
         if args.file_only {
-            println!("{}", file.status.path);
+            println!("{}", file.path);
         } else if args.date_only {
             println!("{}", modified_time);
         } else if args.short {
-            let index_char: char = file.status.index_status.into();
-            let worktree_char: char = file.status.worktree_status.into();
+            let index_char: char = file.index_status.into();
+            let worktree_char: char = file.worktree_status.into();
             println!(
                 "{}{} {} {}",
-                index_char, worktree_char, modified_time, file.status.path
+                index_char, worktree_char, modified_time, file.path
             );
         } else if args.porcelain {
-            let index_char: char = file.status.index_status.into();
-            let worktree_char: char = file.status.worktree_status.into();
+            let index_char: char = file.index_status.into();
+            let worktree_char: char = file.worktree_status.into();
             println!(
                 "{}{} {} {} {}",
-                index_char, worktree_char, modified_time, file.status.path, file.size
+                index_char, worktree_char, modified_time, file.path, metadata.size
             );
         } else {
-            println!("{} {}", file.status.path, modified_time);
+            println!("{} {}", file.path, modified_time);
         }
     }
 
