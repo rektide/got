@@ -4,8 +4,6 @@ use std::path::PathBuf;
 
 use crate::types::{FileStatus, StatusChar};
 
-type BString = gix::bstr::BString;
-
 /// Builder for UntrackedIter
 pub struct UntrackedIterBuilder<'repo> {
     repo: &'repo Repository,
@@ -72,18 +70,6 @@ impl<'repo> UntrackedIter<'repo> {
         UntrackedIterBuilder::new(repo)
     }
 
-    fn path_is_tracked(&self, path: &BStr) -> bool {
-        let index = match self.repo.index() {
-            Ok(idx) => idx,
-            Err(_) => return false,
-        };
-
-        index
-            .entries_with_paths_by_filter_map(|p, _e| if p == path { Some(()) } else { None })
-            .next()
-            .is_some()
-    }
-
     fn process_entry(&mut self, entry: std::fs::DirEntry) -> Option<Result<FileStatus>> {
         let path = entry.path();
 
@@ -112,6 +98,20 @@ impl<'repo> UntrackedIter<'repo> {
             index_status: StatusChar::None,
             worktree_status: StatusChar::Untracked,
         }))
+    }
+
+    fn path_is_tracked(&self, path: &BStr) -> bool {
+        let index = match self.repo.index() {
+            Ok(idx) => idx,
+            Err(_) => return false,
+        };
+
+        for entry in index.entries() {
+            if entry.path(index.state(), std::path::MAIN_SEPARATOR) == path {
+                return true;
+            }
+        }
+        false
     }
 }
 

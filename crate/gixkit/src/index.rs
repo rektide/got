@@ -17,7 +17,7 @@ pub fn get_index_entries(repo: &Repository) -> Result<Vec<IndexedFile>> {
     let state = index.state();
     for entry in index.entries() {
         entries.push(IndexedFile {
-            path: entry.path(state, std::path::MAIN_SEPARATOR).to_string(),
+            path: entry.path(state).to_string(),
             oid: entry.id,
         });
     }

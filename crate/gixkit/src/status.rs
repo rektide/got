@@ -44,7 +44,8 @@ pub struct StatusIter<'repo> {
     show_untracked: bool,
     head_tree: gix::Tree<'repo>,
     work_dir: PathBuf,
-    index_iter: Box<dyn Iterator<Item = (BString, gix_hash::ObjectId)> + 'repo>,
+    index_entries: Vec<(BString, gix_hash::ObjectId)>,
+    index_pos: usize,
     untracked_started: bool,
 }
 
@@ -57,15 +58,18 @@ impl<'repo> StatusIter<'repo> {
             .to_path_buf();
 
         let index = repo.index()?;
-        let index_iter =
-            Box::new(index.entries_with_paths_by_filter_map(|p, e| Some((p.to_owned(), e.id))));
+        let mut index_entries = Vec::new();
+        for (path, entry) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e))) {
+            index_entries.push((path.to_owned(), entry.id));
+        }
 
         Ok(Self {
             repo,
             show_untracked: builder.show_untracked,
             head_tree,
             work_dir,
-            index_iter,
+            index_entries,
+            index_pos: 0,
             untracked_started: false,
         })
     }
@@ -78,8 +82,7 @@ impl<'repo> StatusIter<'repo> {
         let mut index_status = ' ';
         let mut worktree_status = ' ';
 
-        let path_slice = path.as_ref();
-        let path_iter = path_slice.split(|&b| b == b'/');
+        let path_iter = path.split(|&b| b == b'/');
         let mut buf = Vec::new();
 
         if let Some(head_entry) = self
@@ -120,12 +123,13 @@ impl<'repo> Iterator for StatusIter<'repo> {
     type Item = Result<FileStatus>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some((path, entry_oid)) = self.index_iter.next() {
-            let (index_status, worktree_status) =
-                self.compute_index_status(path.clone(), entry_oid);
+        if self.index_pos < self.index_entries.len() {
+            let entry = self.index_entries.remove(self.index_pos);
+
+            let (index_status, worktree_status) = self.compute_index_status(entry.0, entry.1);
 
             let file_status = FileStatus {
-                path: path.to_string(),
+                path: entry.0.to_string(),
                 index_status: StatusChar::from_char(index_status),
                 worktree_status: StatusChar::from_char(worktree_status),
             };
