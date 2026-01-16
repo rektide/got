@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use crate::types::{FileStatus, StatusChar};
 
+type BString = gix::bstr::BString;
+
 /// Builder for UntrackedIter
 pub struct UntrackedIterBuilder<'repo> {
     repo: &'repo Repository,
@@ -38,7 +40,6 @@ impl<'repo> UntrackedIterBuilder<'repo> {
 /// Iterator over untracked files
 pub struct UntrackedIter<'repo> {
     repo: &'repo Repository,
-    index: gix::Index,
     work_dir: PathBuf,
     dir_stack: Vec<PathBuf>,
     current_dir_iter: Option<std::fs::ReadDir>,
@@ -47,7 +48,6 @@ pub struct UntrackedIter<'repo> {
 
 impl<'repo> UntrackedIter<'repo> {
     fn new(repo: &'repo Repository, builder: UntrackedIterBuilder<'repo>) -> Result<Self> {
-        let index = repo.index()?;
         let work_dir = repo
             .work_dir()
             .ok_or_else(|| anyhow::anyhow!("Repository has no working directory"))?
@@ -61,7 +61,6 @@ impl<'repo> UntrackedIter<'repo> {
 
         Ok(Self {
             repo,
-            index,
             work_dir,
             dir_stack,
             current_dir_iter: None,
@@ -74,7 +73,12 @@ impl<'repo> UntrackedIter<'repo> {
     }
 
     fn path_is_tracked(&self, path: &BStr) -> bool {
-        self.index
+        let index = match self.repo.index() {
+            Ok(idx) => idx,
+            Err(_) => return false,
+        };
+
+        index
             .entries_with_paths_by_filter_map(|p, _e| if p == path { Some(()) } else { None })
             .next()
             .is_some()

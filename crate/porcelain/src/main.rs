@@ -1,92 +1,32 @@
-fn main() {
-    let repo = match gix::open(".") {
-        Ok(repo) => repo,
-        Err(e) => {
-            eprintln!("fatal: not a git repository: {}", e);
-            std::process::exit(1);
-        }
-    };
+use anyhow::Result;
+use gixkit::StatusChar;
+use gixkit::{open_repo, StatusIterBuilder, UntrackedIterBuilder};
 
-    let head_commit = match repo.head_commit() {
-        Ok(commit) => commit,
-        Err(e) => {
-            eprintln!("fatal: cannot get HEAD commit: {}", e);
-            std::process::exit(1);
-        }
-    };
+fn main() -> Result<()> {
+    let repo = open_repo(".")?;
 
-    let head_tree = head_commit.tree().unwrap();
+    let status_iter = StatusIterBuilder::new(&repo)
+        .show_untracked(false)
+        .build()?;
 
-    let index = repo.index().unwrap();
-    let work_dir = repo.work_dir().unwrap();
-
-    for (path, entry_oid) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e.id))) {
-        let path_str = path.to_string();
-        let full_path = work_dir.join(&*path_str);
-
-        let mut index_status = ' ';
-        let mut worktree_status = ' ';
-
-        let path_iter = path.split(|&b| b == b'/');
-
-        let mut buf = Vec::new();
-        if let Some(head_entry) = head_tree.lookup_entry(path_iter, &mut buf).unwrap() {
-            if let Ok(head_obj) = head_entry.object() {
-                let head_oid = head_obj.id();
-                if head_oid != entry_oid.1 {
-                    index_status = 'M';
-                }
-            }
-        } else {
-            index_status = 'A';
-        }
-
-        if full_path.exists() {
-            if let Ok(content) = std::fs::read(&full_path) {
-                let oid = gix_object::compute_hash(
-                    gix_hash::Kind::Sha1,
-                    gix_object::Kind::Blob,
-                    &content,
-                );
-                if oid != entry_oid.1 {
-                    worktree_status = 'M';
-                }
-            }
-        } else {
-            worktree_status = 'D';
-        }
-
-        if index_status != ' ' || worktree_status != ' ' {
-            println!("{}{} {}", index_status, worktree_status, path_str);
-        }
+    for result in status_iter {
+        let status = result?;
+        println!(
+            "{}{} {}",
+            char::from(status.index_status),
+            char::from(status.worktree_status),
+            status.path
+        );
     }
 
-    let paths = std::fs::read_dir(work_dir).unwrap();
+    let untracked_iter = UntrackedIterBuilder::new(&repo)
+        .filter(gixkit::UntrackedFilter::Normal)
+        .build()?;
 
-    for entry in paths {
-        let entry = entry.unwrap();
-        let path = entry.path();
-
-        if path.is_file() {
-            let rel_path = path.strip_prefix(work_dir).unwrap();
-            let rel_path_str = rel_path.to_str().unwrap();
-            let rel_path_bstr = gix::bstr::BStr::new(rel_path_str);
-
-            let found =
-                index
-                    .entries_with_paths_by_filter_map(|p, _e| {
-                        if p == rel_path_bstr {
-                            Some(())
-                        } else {
-                            None
-                        }
-                    })
-                    .next()
-                    .is_some();
-
-            if !found {
-                println!("?? {}", rel_path.display());
-            }
-        }
+    for result in untracked_iter {
+        let status = result?;
+        println!("?? {}", status.path);
     }
+
+    Ok(())
 }

@@ -3,20 +3,30 @@ use gix_hash::ObjectId;
 /// Git status character
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StatusChar {
-    Modified = 'M',
-    Added = 'A',
-    Deleted = 'D',
-    Renamed = 'R',
-    Copied = 'C',
-    Unmerged = 'U',
-    Untracked = '?',
-    Ignored = '!',
-    None = ' ',
+    Modified,
+    Added,
+    Deleted,
+    Renamed,
+    Copied,
+    Unmerged,
+    Untracked,
+    Ignored,
+    None,
 }
 
 impl From<StatusChar> for char {
     fn from(c: StatusChar) -> char {
-        c as u8 as char
+        match c {
+            StatusChar::Modified => 'M',
+            StatusChar::Added => 'A',
+            StatusChar::Deleted => 'D',
+            StatusChar::Renamed => 'R',
+            StatusChar::Copied => 'C',
+            StatusChar::Unmerged => 'U',
+            StatusChar::Untracked => '?',
+            StatusChar::Ignored => '!',
+            StatusChar::None => ' ',
+        }
     }
 }
 
@@ -38,7 +48,7 @@ impl StatusChar {
 }
 
 /// Untracked file filter options
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum UntrackedFilter {
     /// Show no untracked files
     No,

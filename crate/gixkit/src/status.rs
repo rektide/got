@@ -5,11 +5,12 @@ use std::path::PathBuf;
 
 use crate::types::{FileStatus, StatusChar};
 
+type BString = gix::bstr::BString;
+
 /// Builder for StatusIter
 pub struct StatusIterBuilder<'repo> {
     repo: &'repo Repository,
     show_untracked: bool,
-    untracked_filter: crate::types::UntrackedFilter,
     path_filter: Option<String>,
 }
 
@@ -18,18 +19,12 @@ impl<'repo> StatusIterBuilder<'repo> {
         Self {
             repo,
             show_untracked: true,
-            untracked_filter: crate::types::UntrackedFilter::Normal,
             path_filter: None,
         }
     }
 
     pub fn show_untracked(mut self, show: bool) -> Self {
         self.show_untracked = show;
-        self
-    }
-
-    pub fn untracked_filter(mut self, filter: crate::types::UntrackedFilter) -> Self {
-        self.untracked_filter = filter;
         self
     }
 
@@ -47,34 +42,28 @@ impl<'repo> StatusIterBuilder<'repo> {
 pub struct StatusIter<'repo> {
     repo: &'repo Repository,
     show_untracked: bool,
-    untracked_filter: crate::types::UntrackedFilter,
-    head_tree: gix::Tree,
-    index: gix::Index,
+    head_tree: gix::Tree<'repo>,
     work_dir: PathBuf,
     index_iter: Box<dyn Iterator<Item = (BString, gix_hash::ObjectId)> + 'repo>,
     untracked_started: bool,
 }
 
-type BString = gix::bstr::BString;
-
 impl<'repo> StatusIter<'repo> {
     fn new(repo: &'repo Repository, builder: StatusIterBuilder<'repo>) -> Result<Self> {
         let head_tree = crate::get_head_tree(repo)?;
-        let index = repo.index()?;
         let work_dir = repo
             .work_dir()
             .ok_or_else(|| anyhow::anyhow!("Repository has no working directory"))?
             .to_path_buf();
 
+        let index = repo.index()?;
         let index_iter =
             Box::new(index.entries_with_paths_by_filter_map(|p, e| Some((p.to_owned(), e.id))));
 
         Ok(Self {
             repo,
             show_untracked: builder.show_untracked,
-            untracked_filter: builder.untracked_filter,
             head_tree,
-            index,
             work_dir,
             index_iter,
             untracked_started: false,
@@ -85,11 +74,12 @@ impl<'repo> StatusIter<'repo> {
         StatusIterBuilder::new(repo)
     }
 
-    fn compute_index_status(&self, path: &BStr, entry_oid: gix_hash::ObjectId) -> (char, char) {
+    fn compute_index_status(&self, path: BString, entry_oid: gix_hash::ObjectId) -> (char, char) {
         let mut index_status = ' ';
         let mut worktree_status = ' ';
 
-        let path_iter = path.split(|&b| b == b'/');
+        let path_slice = path.as_ref();
+        let path_iter = path_slice.split(|&b| b == b'/');
         let mut buf = Vec::new();
 
         if let Some(head_entry) = self
@@ -109,7 +99,7 @@ impl<'repo> StatusIter<'repo> {
         }
 
         let path_str = path.to_string();
-        let full_path = self.work_dir.join(&*path_str);
+        let full_path = self.work_dir.join(&path_str);
 
         if full_path.exists() {
             if let Ok(content) = std::fs::read(&full_path) {
@@ -131,7 +121,8 @@ impl<'repo> Iterator for StatusIter<'repo> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some((path, entry_oid)) = self.index_iter.next() {
-            let (index_status, worktree_status) = self.compute_index_status(&path, entry_oid);
+            let (index_status, worktree_status) =
+                self.compute_index_status(path.clone(), entry_oid);
 
             let file_status = FileStatus {
                 path: path.to_string(),
