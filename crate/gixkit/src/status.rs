@@ -1,11 +1,10 @@
 use anyhow::Result;
-use gix::{bstr::BStr, Repository};
+use gix::{bstr::BString, Repository};
+use gix_hash::ObjectId;
 use gix_object::Kind;
 use std::path::PathBuf;
 
 use crate::types::{FileStatus, StatusChar};
-
-type BString = gix::bstr::BString;
 
 /// Builder for StatusIter
 pub struct StatusIterBuilder<'repo> {
@@ -44,7 +43,7 @@ pub struct StatusIter<'repo> {
     show_untracked: bool,
     head_tree: gix::Tree<'repo>,
     work_dir: PathBuf,
-    index_entries: Vec<(BString, gix_hash::ObjectId)>,
+    index_entries: Vec<(BString, ObjectId)>,
     index_pos: usize,
     untracked_started: bool,
 }
@@ -58,10 +57,10 @@ impl<'repo> StatusIter<'repo> {
             .to_path_buf();
 
         let index = repo.index()?;
-        let mut index_entries = Vec::new();
-        for (path, entry) in index.entries_with_paths_by_filter_map(|p, e| Some((p, e))) {
-            index_entries.push((path.to_owned(), entry.id));
-        }
+        let index_entries: Vec<(BString, ObjectId)> = index
+            .entries_with_paths_by_filter_map(|p, e| Some((p, e.id)))
+            .map(|(outer_p, inner_result)| (outer_p.to_owned(), inner_result.1))
+            .collect();
 
         Ok(Self {
             repo,
@@ -126,7 +125,8 @@ impl<'repo> Iterator for StatusIter<'repo> {
         if self.index_pos < self.index_entries.len() {
             let entry = self.index_entries.remove(self.index_pos);
 
-            let (index_status, worktree_status) = self.compute_index_status(entry.0, entry.1);
+            let (index_status, worktree_status) =
+                self.compute_index_status(entry.0.clone(), entry.1);
 
             let file_status = FileStatus {
                 path: entry.0.to_string(),
