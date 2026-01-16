@@ -122,17 +122,24 @@ impl<'repo> Iterator for StatusIter<'repo> {
     type Item = Result<FileStatus>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.index_pos < self.index_entries.len() {
-            let entry = self.index_entries.remove(self.index_pos);
+        if self.index_pos < self.index_entries.len() {
+            let (path, oid) = self.index_entries[self.index_pos].clone();
+            self.index_pos += 1;
 
-            let (index_status, worktree_status) =
-                self.compute_index_status(entry.0.clone(), entry.1);
+            let (index_status, worktree_status) = self.compute_index_status(path.clone(), oid);
 
             let file_status = FileStatus {
-                path: entry.0.to_string(),
+                path: path.to_string(),
                 index_status: StatusChar::from_char(index_status),
                 worktree_status: StatusChar::from_char(worktree_status),
             };
+
+            eprintln!(
+                "Debug: path={} idx={} wrk={}",
+                path.to_string(),
+                index_status,
+                worktree_status
+            );
 
             if file_status.has_changes() {
                 return Some(Ok(file_status));

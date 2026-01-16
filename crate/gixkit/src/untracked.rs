@@ -133,7 +133,11 @@ impl<'repo> Iterator for UntrackedIter<'repo> {
             }
 
             if let Some(ref mut iter) = self.current_dir_iter {
-                if let Some(entry) = iter.next() {
+                if let Some(entry_result) = iter.next() {
+                    let entry = match entry_result {
+                        Ok(e) => e,
+                        Err(_) => continue,
+                    };
                     let path = entry.path();
 
                     let file_name = path.file_name()?.to_str()?;
