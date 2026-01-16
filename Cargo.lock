@@ -1231,11 +1231,19 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
- "directories",
+ "gotconfig",
  "predicates",
  "tempfile",
  "thiserror 1.0.69",
  "which",
+]
+
+[[package]]
+name = "gotconfig"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "directories",
 ]
 
 [[package]]

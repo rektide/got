@@ -22,7 +22,7 @@ thiserror = "1"
 which = "4"
 
 # Configuration
-directories = "5"
+gotconfig = { path = "../gotconfig" }
 
 [dev-dependencies]
 assert_cmd = "2"

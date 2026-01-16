@@ -1,21 +1,7 @@
 use anyhow::{Context, Result};
-use directories::BaseDirs;
-use std::path::PathBuf;
+use std::io::Write;
 
-pub fn xdg_git_dir() -> PathBuf {
-    BaseDirs::new()
-        .expect("Cannot determine home directory")
-        .config_dir()
-        .join("git")
-}
-
-pub fn xdg_git_config() -> PathBuf {
-    xdg_git_dir().join("config")
-}
-
-pub fn xdg_git_config_d() -> PathBuf {
-    xdg_git_dir().join("config.d")
-}
+use crate::paths;
 
 pub fn add_git_alias(name: &str, command: &str) -> Result<()> {
     let mut cmd = std::process::Command::new("git");
@@ -36,8 +22,8 @@ pub fn add_git_alias(name: &str, command: &str) -> Result<()> {
 }
 
 pub fn ensure_git_config_d_include() -> Result<()> {
-    let config_file = xdg_git_config();
-    let config_d = xdg_git_config_d();
+    let config_file = paths::xdg_git_config();
+    let config_d = paths::xdg_git_config_d();
 
     std::fs::create_dir_all(&config_d)?;
 
@@ -57,7 +43,6 @@ pub fn ensure_git_config_d_include() -> Result<()> {
         .append(true)
         .open(&config_file)?;
 
-    use std::io::Write;
     writeln!(file)?;
     writeln!(file, "[include]")?;
     writeln!(file, "    path = {}/*.conf", config_d.display())?;
@@ -68,7 +53,7 @@ pub fn ensure_git_config_d_include() -> Result<()> {
 pub fn ensure_git_alias(name: &str, command: &str) -> Result<()> {
     ensure_git_config_d_include()?;
 
-    let config_d = xdg_git_config_d();
+    let config_d = paths::xdg_git_config_d();
     let alias_file = config_d.join("aliases.conf");
 
     std::fs::create_dir_all(&config_d)?;
@@ -87,8 +72,6 @@ pub fn ensure_git_alias(name: &str, command: &str) -> Result<()> {
         .append(true)
         .create(true)
         .open(&alias_file)?;
-
-    use std::io::Write;
 
     if !content.ends_with('\n') && !content.is_empty() {
         writeln!(file)?;
