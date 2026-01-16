@@ -58,6 +58,9 @@ pub enum Commands {
     /// Commit using the most recent date of what is staged
     Commitd(CommitdArgs),
 
+    /// Get shell hook script for GOT_D and GOT_F variables
+    HookGot(HookGotArgs),
+
     /// Ignore files
     Nah {
         #[command(subcommand)]
@@ -131,6 +134,19 @@ pub struct CommitdArgs {
     /// Dry run - show what would be committed
     #[arg(short = 'n', long)]
     pub dry_run: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct HookGotArgs {
+    /// Shell type
+    #[arg(short, long, value_enum, default_value = "zsh")]
+    pub shell: ShellType,
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug, Default)]
+pub enum ShellType {
+    #[default]
+    Zsh,
 }
 
 #[derive(Subcommand, Debug)]
