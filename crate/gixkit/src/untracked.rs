@@ -1,5 +1,5 @@
 use anyhow::Result;
-use gix::{bstr::BStr, Repository};
+use gix::{Repository, bstr::BStr};
 use std::path::PathBuf;
 
 use crate::types::{FileStatus, StatusChar};
@@ -70,6 +70,21 @@ impl<'repo> UntrackedIter<'repo> {
         UntrackedIterBuilder::new(repo)
     }
 
+    fn path_is_tracked(&self, path: &BStr) -> bool {
+        let index = match self.repo.index() {
+            Ok(idx) => idx,
+            Err(_) => return false,
+        };
+
+        for entry in index.entries() {
+            let entry_path = entry.path(&index);
+            if entry_path == path {
+                return true;
+            }
+        }
+        false
+    }
+
     fn process_entry(&mut self, entry: std::fs::DirEntry) -> Option<Result<FileStatus>> {
         let path = entry.path();
 
@@ -99,20 +114,6 @@ impl<'repo> UntrackedIter<'repo> {
             worktree_status: StatusChar::Untracked,
         }))
     }
-
-    fn path_is_tracked(&self, path: &BStr) -> bool {
-        let index = match self.repo.index() {
-            Ok(idx) => idx,
-            Err(_) => return false,
-        };
-
-        for entry in index.entries() {
-            if entry.path(index.state(), std::path::MAIN_SEPARATOR) == path {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 impl<'repo> Iterator for UntrackedIter<'repo> {
@@ -133,14 +134,33 @@ impl<'repo> Iterator for UntrackedIter<'repo> {
 
             if let Some(ref mut iter) = self.current_dir_iter {
                 if let Some(entry) = iter.next() {
-                    match entry {
-                        Ok(entry) => {
-                            if let Some(result) = self.process_entry(entry) {
-                                return Some(result);
-                            }
-                        }
-                        Err(e) => return Some(Err(e.into())),
+                    let path = entry.path();
+
+                    let file_name = path.file_name()?.to_str()?;
+                    if file_name.starts_with('.') || file_name == ".git" {
+                        continue;
                     }
+
+                    let rel_path = path.strip_prefix(&self.work_dir).ok()?;
+                    let rel_path_str = rel_path.to_str()?;
+                    let rel_path_bstr = BStr::new(rel_path_str);
+
+                    if self.path_is_tracked(rel_path_bstr) {
+                        continue;
+                    }
+
+                    if path.is_dir() {
+                        if self.filter == crate::types::UntrackedFilter::All {
+                            self.dir_stack.push(path);
+                        }
+                        continue;
+                    }
+
+                    return Some(Ok(FileStatus {
+                        path: rel_path_str.to_string(),
+                        index_status: StatusChar::None,
+                        worktree_status: StatusChar::Untracked,
+                    }));
                 } else {
                     self.current_dir_iter = None;
                 }
