@@ -466,8 +466,7 @@ src/
 ├── lib.rs          # Public API surface
 ├── types.rs        # Core types (FileStatus, StatusChar, FileMetadata)
 ├── repo.rs         # Repository operations (open_repo, get_head_tree)
-├── repo_iter.rs    # Unified RepoIter implementation
-└── filters.rs      # Filter utilities (StatusFilter, etc.)
+└── repo_iter.rs    # Unified RepoIter implementation
 ```
 
 ## Performance Considerations
