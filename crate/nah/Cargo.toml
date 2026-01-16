@@ -1,0 +1,20 @@
+[package]
+name = "nah"
+version = "0.1.0"
+edition = "2021"
+description = "File ignore management for got"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rektide/got"
+
+[dependencies]
+# Error handling
+anyhow = "1"
+
+# Configuration
+gotconfig = { path = "../gotconfig" }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Git operations
+gix = "0.66"
