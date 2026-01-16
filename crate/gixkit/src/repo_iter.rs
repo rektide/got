@@ -84,7 +84,6 @@ pub struct RepoIter {
 enum IterationPhase {
     Tracked,
     Untracked,
-    Done,
 }
 
 impl RepoIter {
@@ -381,7 +380,6 @@ impl Iterator for RepoIter {
                     }
                     return None;
                 }
-                IterationPhase::Done => return None,
             }
         }
     }

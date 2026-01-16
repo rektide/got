@@ -13,7 +13,7 @@ pub fn open_repo(path: impl AsRef<std::path::Path>) -> Result<Repository> {
 }
 
 /// Get HEAD commit, falling back to empty tree for empty repos
-pub fn get_head_tree(repo: &Repository) -> Result<gix::Tree> {
+pub fn get_head_tree(repo: &Repository) -> Result<gix::Tree<'_>> {
     match repo.head_commit() {
         Ok(commit) => commit
             .tree()

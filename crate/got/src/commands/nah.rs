@@ -1,5 +1,5 @@
 use crate::cli::NahArgs;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use nah::NahCommands;
 
 pub fn execute(args: NahArgs) -> Result<()> {
