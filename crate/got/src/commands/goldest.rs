@@ -1,6 +1,6 @@
 use crate::cli::GoldestArgs;
 use anyhow::Result;
-use gixkit::{open_repo, DateIter, StatusIter};
+use gixkit::{open_repo, DateIter, IterMode, RepoIterBuilder};
 use std::sync::Arc;
 
 pub fn execute(args: GoldestArgs) -> Result<()> {
@@ -13,12 +13,15 @@ pub fn execute(args: GoldestArgs) -> Result<()> {
         .to_path_buf();
 
     let show_untracked = args.untracked.is_some();
+    let mode = if show_untracked {
+        IterMode::Both
+    } else {
+        IterMode::Tracked
+    };
 
-    let status_iter = StatusIter::builder(Arc::clone(&repo))
-        .show_untracked(show_untracked)
-        .build()?;
+    let repo_iter = RepoIterBuilder::new(Arc::clone(&repo)).mode(mode).build()?;
 
-    let date_iter = DateIter::new(status_iter, work_dir);
+    let date_iter = DateIter::new(repo_iter, work_dir);
 
     let mut files: Vec<_> = date_iter.collect::<Result<Vec<_>>>()?;
 

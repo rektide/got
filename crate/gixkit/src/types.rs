@@ -1,6 +1,3 @@
-use gix_hash::ObjectId;
-
-/// Git status character
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StatusChar {
     Modified,
@@ -47,24 +44,26 @@ impl StatusChar {
     }
 }
 
-/// Untracked file filter options
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum UntrackedFilter {
-    /// Show no untracked files
     No,
-    /// Show untracked files (normal - no recursion)
     #[default]
     Normal,
-    /// Show all untracked files (including in subdirectories)
     All,
 }
 
-/// Represents status of a file in git
+#[derive(Debug, Clone, PartialEq)]
+pub struct FileMetadata {
+    pub modified_time: std::time::SystemTime,
+    pub size: u64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FileStatus {
     pub path: String,
     pub index_status: StatusChar,
     pub worktree_status: StatusChar,
+    pub metadata: Option<FileMetadata>,
 }
 
 impl FileStatus {
@@ -78,33 +77,5 @@ impl FileStatus {
 
     pub fn is_worktree_modified(&self) -> bool {
         self.worktree_status != StatusChar::None
-    }
-}
-
-/// Extended file status with additional metadata
-#[derive(Debug, Clone)]
-pub struct FileStatusExt {
-    pub base: FileStatus,
-    pub index_oid: Option<ObjectId>,
-    pub worktree_oid: Option<ObjectId>,
-    pub head_oid: Option<ObjectId>,
-    pub worktree_path: std::path::PathBuf,
-}
-
-impl FileStatusExt {
-    pub fn from_base(base: FileStatus, repo: &gix::Repository) -> anyhow::Result<Self> {
-        let work_dir = repo
-            .work_dir()
-            .ok_or_else(|| anyhow::anyhow!("Repository has no working directory"))?;
-
-        let worktree_path = work_dir.join(&base.path);
-
-        Ok(Self {
-            base,
-            index_oid: None,
-            worktree_oid: None,
-            head_oid: None,
-            worktree_path,
-        })
     }
 }

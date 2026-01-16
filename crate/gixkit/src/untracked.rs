@@ -137,6 +137,7 @@ impl Iterator for UntrackedIter {
                         path: rel_path_str.to_string(),
                         index_status: StatusChar::None,
                         worktree_status: StatusChar::Untracked,
+                        metadata: None,
                     }));
                 } else {
                     self.current_dir_iter = None;

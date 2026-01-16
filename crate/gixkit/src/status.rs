@@ -135,6 +135,7 @@ impl Iterator for StatusIter {
                 path: path.to_string(),
                 index_status: StatusChar::from_char(index_status),
                 worktree_status: StatusChar::from_char(worktree_status),
+                metadata: None,
             };
 
             if file_status.has_changes() {
