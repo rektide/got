@@ -79,7 +79,7 @@ pub struct GoldestArgs {
     pub date_only: bool,
 
     /// Filter equivalent to git status -u filtering
-    #[arg(short = 'u', value_name = "FILTER")]
+    #[arg(short = 'u', value_name = "FILTER", num_args(0..=1))]
     pub untracked: Option<String>,
 
     /// Number of results to show
@@ -87,11 +87,11 @@ pub struct GoldestArgs {
     pub lines: usize,
 
     /// Skip N results
-    #[arg(short = 's', long, value_name = "SKIP", default_value = "0")]
+    #[arg(short = 'S', long, value_name = "SKIP", default_value = "0")]
     pub skip: usize,
 
     /// Show git status --short output format
-    #[arg(short, long, conflicts_with_all = ["file_only", "date_only", "porcelain"])]
+    #[arg(short = 's', long, conflicts_with_all = ["file_only", "date_only", "porcelain"])]
     pub short: bool,
 
     /// Show git status --porcelain output format
