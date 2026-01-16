@@ -24,6 +24,9 @@ which = "4"
 # Configuration
 gotconfig = { path = "../gotconfig" }
 
+# File ignore management
+nah = { path = "../nah" }
+
 [dev-dependencies]
 assert_cmd = "2"
 predicates = "3"

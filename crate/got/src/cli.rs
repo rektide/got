@@ -186,4 +186,11 @@ pub enum NahArgs {
         #[arg(short, long)]
         global: bool,
     },
+
+    /// Pick files to ignore from untracked files
+    Pick {
+        /// Add to global ignore list
+        #[arg(short, long)]
+        global: bool,
+    },
 }
