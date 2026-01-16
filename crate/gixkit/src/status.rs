@@ -122,7 +122,7 @@ impl<'repo> Iterator for StatusIter<'repo> {
     type Item = Result<FileStatus>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index_pos < self.index_entries.len() {
+        while self.index_pos < self.index_entries.len() {
             let entry = self.index_entries.remove(self.index_pos);
 
             let (index_status, worktree_status) =
